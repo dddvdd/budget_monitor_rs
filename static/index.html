@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Monitoring System</title>
+<style>
+  :root {
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --primary: #1d4ed8;
+    --primary-hover: #1e40af;
+    --success: #15803d;
+    --warning: #b45309;
+    --danger: #b91c1c;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  .hidden { display: none !important; }
+  button { cursor: pointer; font-family: inherit; font-size: 13px; border-radius: 6px; border: 1px solid transparent; padding: 7px 13px; font-weight: 500; transition: 0.15s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: #fff; color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: #f8fafc; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 4px 9px; font-size: 12px; }
+  input, select, textarea { font-family: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; background: #fff; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #93c5fd; border-color: var(--primary); }
+  label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+
+  /* Login */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(15,23,42,0.08); }
+  .login-card h1 { margin: 0 0 4px; font-size: 20px; }
+  .login-card p.sub { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+  .form-group { margin-bottom: 14px; }
+  .alert { padding: 9px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
+  .alert-error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+  /* App Shell */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 230px; background: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; flex-shrink: 0; }
+  .brand { padding: 18px 16px; border-bottom: 1px solid #1e293b; }
+  .brand h2 { margin: 0; font-size: 16px; color: #fff; }
+  .brand small { color: #94a3b8; font-size: 11px; }
+  .nav { padding: 10px 8px; flex: 1; }
+  .nav-btn { width: 100%; text-align: left; background: transparent; color: #cbd5e1; padding: 9px 12px; border-radius: 6px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-btn:hover { background: #1e293b; color: #fff; }
+  .nav-btn.active { background: var(--primary); color: #fff; }
+  .user-box { padding: 14px 16px; border-top: 1px solid #1e293b; font-size: 12px; }
+  .user-box .role-pill { display: inline-block; padding: 2px 7px; border-radius: 99px; background: #334155; color: #e2e8f0; font-size: 11px; margin-top: 4px; }
+  .main { flex: 1; padding: 24px; overflow-x: auto; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+  .page-header h1 { margin: 0; font-size: 20px; }
+
+  /* Cards & Tables */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .k-label { font-size: 12px; color: var(--muted); }
+  .kpi .k-val { font-size: 21px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 18px; }
+  .card-title { font-size: 15px; font-weight: 600; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border-bottom: 1px solid var(--border); padding: 9px 10px; text-align: left; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; background: #f8fafc; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .b-active, .b-approved, .b-paid { background: #dcfce7; color: #166534; }
+  .b-exhausted { background: #fee2e2; color: #991b1b; }
+  .b-draft, .b-pending { background: #fef3c7; color: #92400e; }
+  .b-served { background: #dbeafe; color: #1e40af; }
+  .row-contingency { background-color: #e0f2fe; }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+  .modal { background: var(--surface); border-radius: 10px; max-width: 780px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .modal-header h3 { margin: 0; font-size: 17px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <h1>Budget Monitoring System</h1>
+    <p class="sub">Provincial Government of Cagayan — PESO</p>
+    <div id="loginError" class="alert alert-error hidden"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" type="text" required autocomplete="username" placeholder="admin or encoder">
+      </div>
+      <div class="form-group">
+        <label for="loginPass">Password</label>
+        <input id="loginPass" type="password" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%">Sign In</button>
+    </form>
+    <p style="margin:14px 0 0; font-size:12px; color:var(--muted)">
+      Default accounts: <code>admin / admin123</code> or <code>encoder / encoder123</code>
+    </p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appView" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <h2>Budget Monitor</h2>
+      <small>Rust Edition · SQLite WAL</small>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="nav-btn admin-only" data-tab="accounts">Budget Accounts</button>
+      <button class="nav-btn" data-tab="prs">Purchase Requests</button>
+      <button class="nav-btn" data-tab="obrs">Obligation Requests</button>
+      <button class="nav-btn" data-tab="dvs">Disbursement Vouchers</button>
+      <button class="nav-btn admin-only" data-tab="augmentations">Augmentations</button>
+      <button class="nav-btn admin-only" data-tab="audit">Audit Trail</button>
+    </nav>
+    <div class="user-box">
+      <div id="userFullName" style="font-weight:600"></div>
+      <div id="userRole" class="role-pill"></div>
+      <div style="margin-top:10px">
+        <button id="logoutBtn" class="btn-secondary btn-sm" style="width:100%">Sign Out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab-panel">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <div style="display:flex; gap:8px; align-items:center">
+          <span id="dashUpdated" style="font-size:12px; color:var(--muted)"></span>
+          <button id="btnPrintSummary" class="btn-secondary">Print Budget Summary</button>
+          <button id="btnRecalc" class="btn-secondary admin-only">Recalculate Budgets</button>
+          <button id="btnRefreshDash" class="btn-primary">Refresh</button>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="k-label">Total Budget</div><div id="kpiBudget" class="k-val">—</div></div>
+        <div class="kpi"><div class="k-label">Budgetary Reservation – Unobligated</div><div id="kpiUnobligated" class="k-val" style="color:var(--warning)">—</div></div>
+        <div class="kpi"><div class="k-label">Total Obligated</div><div id="kpiObligated" class="k-val">—</div></div>
+        <div class="kpi"><div class="k-label">Total Available</div><div id="kpiAvailable" class="k-val" style="color:var(--success)">—</div></div>
+        <div class="kpi"><div class="k-label">PR / OBR / DV</div><div id="kpiCounts" class="k-val">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>Quick Actions</span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn-primary btn-sm" onclick="switchTab('prs'); openPRModal(null)">+ New PR</button>
+          <button class="btn-success btn-sm" onclick="switchTab('obrs'); openDirectOBRModal()">+ Direct OBR</button>
+          <button class="btn-secondary btn-sm admin-only" onclick="switchTab('augmentations'); openAugmentationModal()">+ Augment / Transfer</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span>Account Breakdown</span>
+          <span style="font-size:12px; font-weight:400; color:var(--muted)"><span style="display:inline-block; width:12px; height:12px; background:#e0f2fe; border:1px solid #bae6fd; vertical-align:middle; margin-right:4px"></span>Light blue = 10% Contingency</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Account Name</th><th class="num">Budget</th><th class="num">Unobligated</th>
+              <th class="num">Obligated</th><th class="num">Available</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dashAccountsBody"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>Recent Activities</span></div>
+        <table>
+          <thead>
+            <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Table</th><th>Details</th></tr>
+          </thead>
+          <tbody id="dashRecentBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS (ADMIN) -->
+    <section id="tab-accounts" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Budget Accounts</h1>
+        <div style="display:flex; gap:8px">
+          <button id="btnAddCOA" class="btn-secondary">+ Add Chart of Account</button>
+          <button id="btnAddAccount" class="btn-primary">+ Add Budget Account</button>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Account Code</th><th>Account Name</th><th class="num">Budget</th>
+              <th>Contingency</th><th class="num">Available</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accountsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PURCHASE REQUESTS -->
+    <section id="tab-prs" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Purchase Requests (PR)</h1>
+        <button id="btnNewPR" class="btn-primary">+ New Purchase Request</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>PR Number</th><th>Date</th><th>Department</th><th>Account</th>
+              <th>Payee</th><th class="num">Items</th><th class="num">Total Amount</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- OBLIGATION REQUESTS -->
+    <section id="tab-obrs" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Obligation Requests (OBR)</h1>
+        <button id="btnDirectOBR" class="btn-primary">+ Direct OBR</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>OBR Number</th><th>Date</th><th>PR Ref</th><th>Account</th>
+              <th>Payee</th><th class="num">Amount</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="obrsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DISBURSEMENT VOUCHERS -->
+    <section id="tab-dvs" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Disbursement Vouchers (DV)</h1>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>DV Number</th><th>Date</th><th>OBR Ref</th><th>Payee</th>
+              <th>Check No.</th><th>Check Date</th><th class="num">Amount</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dvsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AUGMENTATIONS (ADMIN) -->
+    <section id="tab-augmentations" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Budget Augmentations (Transfers)</h1>
+        <button id="btnNewAugmentation" class="btn-primary">+ New Augmentation</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Source Account</th><th>Destination Account</th>
+              <th class="num">Amount</th><th>Justification</th><th>Prepared By</th>
+            </tr>
+          </thead>
+          <tbody id="augmentationsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AUDIT TRAIL (ADMIN) -->
+    <section id="tab-audit" class="tab-panel hidden">
+      <div class="page-header">
+        <h1>Audit Trail</h1>
+        <div style="display:flex; gap:8px">
+          <button id="btnExportAudit" class="btn-secondary">Export CSV</button>
+          <button id="btnRefreshAudit" class="btn-primary">Refresh</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="grid-3" style="margin-bottom:12px">
+          <div><label>Username</label><input id="fltUser" placeholder="All users"></div>
+          <div><label>Action</label><input id="fltAction" placeholder="e.g. PR Created"></div>
+          <div><label>Table</label><input id="fltTable" placeholder="e.g. tblPR"></div>
+          <div><label>From Date</label><input id="fltFrom" type="date"></div>
+          <div><label>To Date</label><input id="fltTo" type="date"></div>
+          <div style="display:flex; align-items:flex-end; gap:8px">
+            <button id="btnApplyAudit" class="btn-primary">Apply</button>
+            <button id="btnClearAudit" class="btn-secondary">Clear</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Timestamp</th><th>Username</th><th>Action</th><th>Table</th><th>Record ID</th><th>Details</th></tr>
+          </thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL CONTAINER -->
+<div id="modalBackdrop" class="modal-backdrop hidden">
+  <div id="modalContent" class="modal"></div>
+</div>
+
+<script>
+const state = {
+  token: localStorage.getItem('bm_token') || '',
+  user: null,
+  coa: [],
+  accounts: [],
+  prs: [],
+  obrs: [],
+  dvs: [],
+};
+
+const php = (n) => '₱' + Number(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const badgeClass = (s) => 'badge b-' + String(s || '').toLowerCase();
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  if (res.status === 403 || res.status === 401) {
+    if (path !== '/api/auth/login') {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Unauthorized');
+    }
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.add('hidden');
+  document.getElementById('modalContent').innerHTML = '';
+}
+document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+  if (e.target.id === 'modalBackdrop') closeModal();
+});
+
+// AUTH
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: document.getElementById('loginUser').value,
+        password: document.getElementById('loginPass').value,
+      }),
+    });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem('bm_token', state.token);
+    enterApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+  state.token = '';
+  state.user = null;
+  localStorage.removeItem('bm_token');
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+});
+
+async function bootstrap() {
+  if (!state.token) return;
+  try {
+    state.user = await api('/api/auth/me');
+    enterApp();
+  } catch (_) {
+    localStorage.removeItem('bm_token');
+    state.token = '';
+  }
+}
+
+function enterApp() {
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('userFullName').textContent = state.user.full_name;
+  document.getElementById('userRole').textContent = state.user.role;
+  const isAdmin = state.user.role === 'Admin';
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.classList.toggle('hidden', !isAdmin);
+  });
+  switchTab('dashboard');
+}
+
+// NAVIGATION
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tab));
+  if (tab === 'dashboard') loadDashboard();
+  if (tab === 'accounts') loadAccounts();
+  if (tab === 'prs') loadPRs();
+  if (tab === 'obrs') loadOBRs();
+  if (tab === 'dvs') loadDVs();
+  if (tab === 'augmentations') loadAugmentations();
+  if (tab === 'audit') loadAudit();
+}
+
+// DASHBOARD
+async function loadDashboard() {
+  const d = await api('/api/dashboard');
+  document.getElementById('kpiBudget').textContent = php(d.total_budget);
+  document.getElementById('kpiUnobligated').textContent = php(d.total_unobligated);
+  document.getElementById('kpiObligated').textContent = php(d.total_obligated);
+  document.getElementById('kpiAvailable').textContent = php(d.total_available);
+  document.getElementById('kpiCounts').textContent = `${d.pr_count} / ${d.obr_count} / ${d.dv_count}`;
+  document.getElementById('dashUpdated').textContent = 'Updated: ' + d.updated_at;
+  document.getElementById('dashAccountsBody').innerHTML = d.accounts.map(a => `
+    <tr class="${a.contingency ? 'row-contingency' : ''}">
+      <td>
+        <div><strong>${esc(a.account_name)}</strong></div>
+        <div style="font-size:11px; color:var(--muted)"><code>${esc(a.account_code)}</code>${a.contingency ? ' · 10% Contingency' : ''}</div>
+      </td>
+      <td class="num">${php(a.budget)}</td>
+      <td class="num">${php(a.unobligated)}</td>
+      <td class="num">${php(a.obligated)}</td>
+      <td class="num"><strong>${php(a.available)}</strong></td>
+      <td><span class="${badgeClass(a.status)}">${esc(a.status)}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No budget accounts yet.</td></tr>';
+  document.getElementById('dashRecentBody').innerHTML = (d.recent_activities || []).map(r => `
+    <tr>
+      <td style="white-space:nowrap">${esc(r.timestamp)}</td>
+      <td><code>${esc(r.username)}</code></td>
+      <td>${esc(r.action)}</td>
+      <td><code>${esc(r.table_name)}</code></td>
+      <td>${esc(r.details || '')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No recent activity.</td></tr>';
+}
+document.getElementById('btnRefreshDash').addEventListener('click', loadDashboard);
+document.getElementById('btnPrintSummary').addEventListener('click', () => {
+  window.open('/api/reports/budget-summary?token=' + encodeURIComponent(state.token), '_blank');
+});
+document.getElementById('btnRecalc').addEventListener('click', async () => {
+  const res = await api('/api/accounts/recalculate', { method: 'POST' });
+  alert(`Recalculated ${res.recalculated} account(s).`);
+  loadDashboard();
+});
+
+// ACCOUNTS
+async function loadAccounts() {
+  const [accs, coa] = await Promise.all([api('/api/accounts'), api('/api/coa')]);
+  state.accounts = accs;
+  state.coa = coa;
+  document.getElementById('accountsBody').innerHTML = accs.map(a => `
+    <tr>
+      <td><code>${esc(a.account_code)}</code></td>
+      <td>${esc(a.account_name)}</td>
+      <td class="num">${php(a.budget)}</td>
+      <td>${a.contingency ? 'Yes (10%)' : 'No'}</td>
+      <td class="num">${php(a.available)}</td>
+      <td><span class="${badgeClass(a.status)}">${esc(a.status)}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-secondary btn-sm" onclick="openEditAccount(${a.account_id})">Edit</button>
+        <button class="btn-danger btn-sm" onclick="deleteAccount(${a.account_id}, '${esc(a.account_code)}')">Delete</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No accounts yet.</td></tr>';
+}
+
+document.getElementById('btnAddCOA').addEventListener('click', () => {
+  showModal(`
+    <div class="modal-header"><h3>Add Chart of Account</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="coaForm">
+      <div class="form-group"><label>Account Code</label><input id="coaCode" required placeholder="e.g. 5-02-01-010"></div>
+      <div class="form-group"><label>Account Name</label><input id="coaName" required></div>
+      <div class="form-group"><label>Category</label><input id="coaCat" placeholder="MOOE / Capital Outlay / PS"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('coaForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/coa', {
+        method: 'POST',
+        body: JSON.stringify({
+          account_code: document.getElementById('coaCode').value,
+          account_name: document.getElementById('coaName').value,
+          category: document.getElementById('coaCat').value || null,
+        }),
+      });
+      closeModal();
+      loadAccounts();
+    } catch (err) { alert(err.message); }
+  });
+});
+
+document.getElementById('btnAddAccount').addEventListener('click', async () => {
+  if (!state.coa.length) state.coa = await api('/api/coa');
+  const datalistOpts = state.coa
+    .map(c => `<option value="${esc(c.account_code)} — ${esc(c.account_name)}">`)
+    .join('');
+
+  showModal(`
+    <div class="modal-header"><h3>Add Budget Account</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="addAccForm">
+      <div class="form-group">
+        <label for="accSearch">Search Account Code or Account Name</label>
+        <input id="accSearch" type="text" list="coaSuggestions" autocomplete="off" placeholder="Type code (e.g. 5-02-03) or name (e.g. Supplies)...">
+        <datalist id="coaSuggestions">${datalistOpts}</datalist>
+      </div>
+      <div class="form-group">
+        <label for="accCode">Matching Chart of Accounts <span id="accMatchCount" style="font-weight:400; color:var(--muted)"></span></label>
+        <select id="accCode" required></select>
+      </div>
+      <div class="form-group"><label>Budget Amount (PHP)</label><input id="accBudget" type="number" step="0.01" min="0.01" required></div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px">
+        <input id="accCont" type="checkbox" style="width:auto"> <label for="accCont" style="margin:0">Reserve 10% Contingency</label>
+      </div>
+      <div id="accPreview" class="alert alert-info">Base Available: ₱0.00</div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Account</button>
+      </div>
+    </form>
+  `);
+
+  const searchEl = document.getElementById('accSearch');
+  const selectEl = document.getElementById('accCode');
+  const countEl = document.getElementById('accMatchCount');
+
+  const renderFilteredOptions = (rawQuery) => {
+    const q = rawQuery.trim().toLowerCase();
+    // If user picked a datalist suggestion ("CODE — Name"), extract the code part too
+    const codeHint = q.includes('—') ? q.split('—')[0].trim() : q;
+    const filtered = !q
+      ? state.coa
+      : state.coa.filter(c =>
+          c.account_code.toLowerCase().includes(codeHint) ||
+          c.account_name.toLowerCase().includes(q)
+        );
+    selectEl.innerHTML = filtered.length
+      ? filtered.map(c => `<option value="${esc(c.account_code)}">${esc(c.account_code)} — ${esc(c.account_name)}</option>`).join('')
+      : '<option value="" disabled selected>No matching account found</option>';
+    countEl.textContent = `(${filtered.length} of ${state.coa.length})`;
+  };
+
+  renderFilteredOptions('');
+  searchEl.addEventListener('input', () => renderFilteredOptions(searchEl.value));
+  searchEl.focus();
+
+  const updatePrev = () => {
+    const b = parseFloat(document.getElementById('accBudget').value) || 0;
+    const c = document.getElementById('accCont').checked;
+    document.getElementById('accPreview').textContent = 'Base Available: ' + php(c ? b * 0.9 : b);
+  };
+  document.getElementById('accBudget').addEventListener('input', updatePrev);
+  document.getElementById('accCont').addEventListener('change', updatePrev);
+  document.getElementById('addAccForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectEl.value) {
+      alert('Please select a valid Chart of Accounts entry.');
+      return;
+    }
+    try {
+      await api('/api/accounts', {
+        method: 'POST',
+        body: JSON.stringify({
+          account_code: selectEl.value,
+          budget: parseFloat(document.getElementById('accBudget').value),
+          contingency: document.getElementById('accCont').checked,
+        }),
+      });
+      closeModal();
+      loadAccounts();
+    } catch (err) { alert(err.message); }
+  });
+});
+
+window.openEditAccount = (id) => {
+  const a = state.accounts.find(x => x.account_id === id);
+  if (!a) return;
+  showModal(`
+    <div class="modal-header"><h3>Edit Account</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="editAccForm">
+      <div class="grid-2">
+        <div class="form-group"><label>Account Code</label><input id="edCode" value="${esc(a.account_code)}" required></div>
+        <div class="form-group"><label>Account Name</label><input id="edName" value="${esc(a.account_name)}" required></div>
+        <div class="form-group"><label>Budget</label><input id="edBudget" type="number" step="0.01" min="0.01" value="${a.budget}" required></div>
+        <div class="form-group"><label>Status</label>
+          <select id="edStatus"><option ${a.status==='Active'?'selected':''}>Active</option><option ${a.status==='Exhausted'?'selected':''}>Exhausted</option></select>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px">
+        <input id="edCont" type="checkbox" style="width:auto" ${a.contingency?'checked':''}>
+        <label for="edCont" style="margin:0">Reserve 10% Contingency</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Save Changes</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('editAccForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/accounts/' + id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          account_code: document.getElementById('edCode').value,
+          account_name: document.getElementById('edName').value,
+          budget: parseFloat(document.getElementById('edBudget').value),
+          contingency: document.getElementById('edCont').checked,
+          status: document.getElementById('edStatus').value,
+        }),
+      });
+      closeModal();
+      loadAccounts();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+window.deleteAccount = async (id, code) => {
+  if (!confirm(`Delete budget account ${code}? This cannot be undone.`)) return;
+  try {
+    await api('/api/accounts/' + id, { method: 'DELETE' });
+    loadAccounts();
+  } catch (err) { alert(err.message); }
+};
+
+// PURCHASE REQUESTS
+async function loadPRs() {
+  const [prs, accs] = await Promise.all([api('/api/prs'), api('/api/accounts')]);
+  state.prs = prs;
+  state.accounts = accs;
+  document.getElementById('prsBody').innerHTML = prs.map(p => `
+    <tr>
+      <td><code>${esc(p.pr_number)}</code></td>
+      <td>${esc(p.pr_date)}</td>
+      <td>${esc(p.department)}</td>
+      <td><code>${esc(p.account_code)}</code></td>
+      <td>${esc(p.payee)}</td>
+      <td class="num">${p.item_count}</td>
+      <td class="num"><strong>${php(p.total_amount)}</strong></td>
+      <td><span class="${badgeClass(p.status)}">${esc(p.status)}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-secondary btn-sm" onclick="openReport('pr', ${p.pr_id})">Print</button>
+        ${p.status !== 'Served' ? `<button class="btn-secondary btn-sm" onclick="openPRModal(${p.pr_id})">Edit</button>` : ''}
+        ${p.status !== 'Served' ? `<button class="btn-success btn-sm" onclick="openConvertOBR(${p.pr_id})">Convert to OBR</button>` : ''}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No Purchase Requests yet.</td></tr>';
+}
+
+document.getElementById('btnNewPR').addEventListener('click', () => openPRModal(null));
+
+window.openPRModal = async (prId) => {
+  if (!state.accounts.length) state.accounts = await api('/api/accounts');
+  const pr = prId ? await api('/api/prs/' + prId) : null;
+  const items = pr?.items?.length ? pr.items : [{ unit: 'pcs', description: '', quantity: 1, unit_cost: 0 }];
+  const accOpts = state.accounts.map(a => `<option value="${esc(a.account_code)}" ${pr?.account_code===a.account_code?'selected':''}>${esc(a.account_code)} — ${esc(a.account_name)} (Avail: ${php(a.available)})</option>`).join('');
+
+  showModal(`
+    <div class="modal-header"><h3>${pr ? 'Edit PR ' + esc(pr.pr_number) : 'New Purchase Request'}</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="prForm">
+      <div class="grid-2">
+        <div class="form-group"><label>Department / Office</label><input id="prDept" value="${esc(pr?.department || 'PESO')}" required></div>
+        <div class="form-group"><label>Fund Source</label><input id="prFund" value="${esc(pr?.fund_source || 'General Fund')}" required></div>
+        <div class="form-group"><label>Account Code</label><select id="prAcc">${accOpts}</select></div>
+        <div class="form-group"><label>AIP Code</label><input id="prAip" value="${esc(pr?.aip_code || '')}"></div>
+        <div class="form-group"><label>Payee</label><input id="prPayee" value="${esc(pr?.payee || '')}" required></div>
+        <div class="form-group"><label>Status</label>
+          <select id="prStatus">
+            ${['Draft','Pending','Approved'].map(s => `<option ${pr?.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Purpose</label><textarea id="prPurpose" rows="2" required>${esc(pr?.purpose || '')}</textarea></div>
+      <div class="card" style="padding:10px; margin-bottom:10px">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+          <strong>Line Items</strong>
+          <button type="button" class="btn-secondary btn-sm" id="btnAddLine">+ Add Line</button>
+        </div>
+        <table>
+          <thead><tr><th>Unit</th><th>Description</th><th style="width:80px">Qty</th><th style="width:110px">Unit Cost</th><th class="num">Total</th><th></th></tr></thead>
+          <tbody id="prItemsBody"></tbody>
+        </table>
+        <div style="text-align:right; margin-top:8px; font-weight:700">Grand Total: <span id="prGrandTotal">₱0.00</span></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Save PR</button>
+      </div>
+    </form>
+  `);
+
+  const tbody = document.getElementById('prItemsBody');
+  const recalc = () => {
+    let grand = 0;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const q = parseFloat(tr.querySelector('.it-qty').value) || 0;
+      const c = parseFloat(tr.querySelector('.it-cost').value) || 0;
+      const tot = q * c;
+      grand += tot;
+      tr.querySelector('.it-tot').textContent = php(tot);
+    });
+    document.getElementById('prGrandTotal').textContent = php(grand);
+  };
+  const addRow = (it) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="it-unit" value="${esc(it.unit)}" required></td>
+      <td><input class="it-desc" value="${esc(it.description)}" required></td>
+      <td><input class="it-qty" type="number" step="any" min="0.01" value="${it.quantity}" required></td>
+      <td><input class="it-cost" type="number" step="0.01" min="0.01" value="${it.unit_cost}" required></td>
+      <td class="num it-tot">₱0.00</td>
+      <td><button type="button" class="btn-danger btn-sm it-del">✕</button></td>
+    `;
+    tr.querySelectorAll('.it-qty, .it-cost').forEach(inp => inp.addEventListener('input', recalc));
+    tr.querySelector('.it-del').addEventListener('click', () => { if (tbody.children.length > 1) { tr.remove(); recalc(); } });
+    tbody.appendChild(tr);
+    recalc();
+  };
+  items.forEach(addRow);
+  document.getElementById('btnAddLine').addEventListener('click', () => addRow({ unit: 'pcs', description: '', quantity: 1, unit_cost: 0 }));
+
+  document.getElementById('prForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      department: document.getElementById('prDept').value,
+      fund_source: document.getElementById('prFund').value,
+      account_code: document.getElementById('prAcc').value,
+      aip_code: document.getElementById('prAip').value || null,
+      payee: document.getElementById('prPayee').value,
+      purpose: document.getElementById('prPurpose').value,
+      status: document.getElementById('prStatus').value,
+      items: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
+        unit: tr.querySelector('.it-unit').value,
+        description: tr.querySelector('.it-desc').value,
+        quantity: parseFloat(tr.querySelector('.it-qty').value),
+        unit_cost: parseFloat(tr.querySelector('.it-cost').value),
+      })),
+    };
+    try {
+      if (prId) await api('/api/prs/' + prId, { method: 'PUT', body: JSON.stringify(payload) });
+      else await api('/api/prs', { method: 'POST', body: JSON.stringify(payload) });
+      closeModal();
+      loadPRs();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+window.openConvertOBR = (prId) => {
+  const pr = state.prs.find(p => p.pr_id === prId);
+  if (!pr) return;
+  showModal(`
+    <div class="modal-header"><h3>Convert PR ${esc(pr.pr_number)} to OBR</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="obrForm">
+      <p>Payee: <strong>${esc(pr.payee)}</strong> | Account: <code>${esc(pr.account_code)}</code></p>
+      <div class="form-group"><label>OBR Amount (PHP)</label><input id="obrAmt" type="number" step="0.01" min="0.01" value="${pr.total_amount}" required></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-success">Create OBR</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('obrForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('obrAmt').value);
+    try {
+      let res = await api('/api/obrs/convert', { method: 'POST', body: JSON.stringify({ pr_id: prId, amount, force_over_budget: false }) });
+      if (res.outcome === 'BudgetWarning') {
+        if (!confirm(res.message)) return;
+        res = await api('/api/obrs/convert', { method: 'POST', body: JSON.stringify({ pr_id: prId, amount, force_over_budget: true }) });
+      }
+      alert('OBR ' + res.obr.obr_number + ' created successfully!');
+      closeModal();
+      loadPRs();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+// OBRs
+async function loadOBRs() {
+  state.obrs = await api('/api/obrs');
+  document.getElementById('obrsBody').innerHTML = state.obrs.map(o => `
+    <tr>
+      <td><code>${esc(o.obr_number)}</code></td>
+      <td>${esc(o.obr_date)}</td>
+      <td><code>${esc(o.pr_number || 'Direct')}</code></td>
+      <td><code>${esc(o.account_code)}</code></td>
+      <td>${esc(o.payee)}</td>
+      <td class="num"><strong>${php(o.amount)}</strong></td>
+      <td><span class="${badgeClass(o.status)}">${esc(o.status)}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-secondary btn-sm" onclick="openReport('obr', ${o.obr_id})">Print</button>
+        ${o.status !== 'Paid' ? `<button class="btn-primary btn-sm" onclick="openCreateDV(${o.obr_id})">Create DV</button>` : ''}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No Obligation Requests yet.</td></tr>';
+}
+
+window.openCreateDV = (obrId) => {
+  const o = state.obrs.find(x => x.obr_id === obrId);
+  if (!o) return;
+  const today = new Date().toISOString().slice(0, 10);
+  showModal(`
+    <div class="modal-header"><h3>Create DV for ${esc(o.obr_number)}</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="dvForm">
+      <p>Payee: <strong>${esc(o.payee)}</strong> | Amount: <strong>${php(o.amount)}</strong></p>
+      <div class="grid-2">
+        <div class="form-group"><label>Check Number</label><input id="dvCheckNo" placeholder="e.g. CHK-001234"></div>
+        <div class="form-group"><label>Check Date</label><input id="dvCheckDate" type="date" value="${today}"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create DV</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('dvForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const dv = await api('/api/dvs', {
+        method: 'POST',
+        body: JSON.stringify({
+          obr_id: obrId,
+          check_no: document.getElementById('dvCheckNo').value || null,
+          check_date: document.getElementById('dvCheckDate').value || null,
+        }),
+      });
+      alert('DV ' + dv.dv_number + ' created successfully!');
+      closeModal();
+      loadOBRs();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+// DVs
+async function loadDVs() {
+  state.dvs = await api('/api/dvs');
+  document.getElementById('dvsBody').innerHTML = state.dvs.map(d => `
+    <tr>
+      <td><code>${esc(d.dv_number)}</code></td>
+      <td>${esc(d.dv_date)}</td>
+      <td><code>${esc(d.obr_number)}</code></td>
+      <td>${esc(d.payee)}</td>
+      <td>${esc(d.check_no || '—')}</td>
+      <td>${esc(d.check_date || '—')}</td>
+      <td class="num"><strong>${php(d.amount)}</strong></td>
+      <td><span class="${badgeClass(d.status)}">${esc(d.status)}</span></td>
+      <td><button class="btn-secondary btn-sm" onclick="openReport('dv', ${d.dv_id})">Print</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No Disbursement Vouchers yet.</td></tr>';
+}
+
+// AUGMENTATIONS & DIRECT OBR
+document.getElementById('btnDirectOBR').addEventListener('click', () => openDirectOBRModal());
+window.openDirectOBRModal = async () => {
+  if (!state.accounts.length) state.accounts = await api('/api/accounts');
+  const accOpts = state.accounts.map(a => `<option value="${esc(a.account_code)}">${esc(a.account_code)} — ${esc(a.account_name)} (Avail: ${php(a.available)})</option>`).join('');
+  showModal(`
+    <div class="modal-header"><h3>New Direct OBR (No PR)</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="directObrForm">
+      <div class="form-group"><label>Account Code</label><select id="dobrAcc">${accOpts}</select></div>
+      <div class="grid-2">
+        <div class="form-group"><label>Payee</label><input id="dobrPayee" required></div>
+        <div class="form-group"><label>Amount (PHP)</label><input id="dobrAmt" type="number" step="0.01" min="0.01" required></div>
+      </div>
+      <div class="form-group"><label>Purpose</label><textarea id="dobrPurpose" rows="2" required></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-success">Create Direct OBR</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('directObrForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      account_code: document.getElementById('dobrAcc').value,
+      payee: document.getElementById('dobrPayee').value,
+      purpose: document.getElementById('dobrPurpose').value,
+      amount: parseFloat(document.getElementById('dobrAmt').value),
+      force_over_budget: false,
+    };
+    try {
+      let res = await api('/api/obrs/direct', { method: 'POST', body: JSON.stringify(payload) });
+      if (res.outcome === 'BudgetWarning') {
+        if (!confirm(res.message)) return;
+        payload.force_over_budget = true;
+        res = await api('/api/obrs/direct', { method: 'POST', body: JSON.stringify(payload) });
+      }
+      alert('Direct OBR ' + res.obr.obr_number + ' created successfully!');
+      closeModal();
+      loadOBRs();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+async function loadAugmentations() {
+  const rows = await api('/api/augmentations');
+  document.getElementById('augmentationsBody').innerHTML = rows.map(a => `
+    <tr>
+      <td>${esc(a.augmentation_date)}</td>
+      <td><code>${esc(a.source_account_code)}</code></td>
+      <td><code>${esc(a.destination_account_code)}</code></td>
+      <td class="num"><strong>${php(a.amount)}</strong></td>
+      <td>${esc(a.justification)}</td>
+      <td>${esc(a.prepared_by)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No budget augmentations yet.</td></tr>';
+}
+
+document.getElementById('btnNewAugmentation').addEventListener('click', () => openAugmentationModal());
+window.openAugmentationModal = async () => {
+  state.accounts = await api('/api/accounts');
+  const accOpts = state.accounts.map(a => `<option value="${esc(a.account_code)}">${esc(a.account_code)} — ${esc(a.account_name)} (Avail: ${php(a.available)})</option>`).join('');
+  showModal(`
+    <div class="modal-header"><h3>New Budget Augmentation (Transfer)</h3><button class="btn-secondary btn-sm" onclick="closeModal()">✕</button></div>
+    <form id="augForm">
+      <div class="form-group"><label>Source Account</label><select id="augSrc">${accOpts}</select></div>
+      <div class="form-group"><label>Destination Account</label><select id="augDst">${accOpts}</select></div>
+      <div class="form-group"><label>Transfer Amount (PHP)</label><input id="augAmt" type="number" step="0.01" min="0.01" required></div>
+      <div class="form-group"><label>Justification</label><textarea id="augJust" rows="2" required></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Execute Transfer</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('augForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/augmentations', {
+        method: 'POST',
+        body: JSON.stringify({
+          source_account_code: document.getElementById('augSrc').value,
+          destination_account_code: document.getElementById('augDst').value,
+          amount: parseFloat(document.getElementById('augAmt').value),
+          justification: document.getElementById('augJust').value,
+        }),
+      });
+      alert('Budget augmentation completed!');
+      closeModal();
+      loadAugmentations();
+    } catch (err) { alert(err.message); }
+  });
+};
+
+// AUDIT TRAIL
+function auditQueryParams() {
+  const p = new URLSearchParams();
+  const u = document.getElementById('fltUser').value.trim();
+  const a = document.getElementById('fltAction').value.trim();
+  const t = document.getElementById('fltTable').value.trim();
+  const df = document.getElementById('fltFrom').value;
+  const dt = document.getElementById('fltTo').value;
+  if (u) p.set('username', u);
+  if (a) p.set('action', a);
+  if (t) p.set('table_name', t);
+  if (df) p.set('date_from', df);
+  if (dt) p.set('date_to', dt);
+  return p;
+}
+async function loadAudit() {
+  const rows = await api('/api/audit?' + auditQueryParams().toString());
+  document.getElementById('auditBody').innerHTML = rows.map(r => `
+    <tr>
+      <td style="white-space:nowrap">${esc(r.timestamp)}</td>
+      <td><code>${esc(r.username)}</code></td>
+      <td>${esc(r.action)}</td>
+      <td><code>${esc(r.table_name)}</code></td>
+      <td>${r.record_id}</td>
+      <td>${esc(r.details || '')}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No audit entries found.</td></tr>';
+}
+document.getElementById('btnApplyAudit').addEventListener('click', loadAudit);
+document.getElementById('btnRefreshAudit').addEventListener('click', loadAudit);
+document.getElementById('btnClearAudit').addEventListener('click', () => {
+  ['fltUser','fltAction','fltTable','fltFrom','fltTo'].forEach(id => document.getElementById(id).value = '');
+  loadAudit();
+});
+document.getElementById('btnExportAudit').addEventListener('click', () => {
+  const p = auditQueryParams();
+  p.set('token', state.token);
+  window.open('/api/audit/export?' + p.toString(), '_blank');
+});
+
+window.openReport = (kind, id) => {
+  window.open(`/api/reports/${kind}/${id}?token=${encodeURIComponent(state.token)}`, '_blank');
+};
+
+bootstrap();
+</script>
+</body>
+</html>
+
